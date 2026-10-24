@@ -56,4 +56,13 @@ function formatPostText(generatedText: string): string {
 	return postText;
 }
 
-export = { formatPostText, generateOgiri };
+function normalizePostText(postText: string): string {
+	return postText.trim().replace(/\s+/g, " ");
+}
+
+function hasDuplicatePost(previousPosts: string[], newPost: string): boolean {
+	const normalizedNewPost = normalizePostText(newPost);
+	return previousPosts.some((post) => normalizePostText(post) === normalizedNewPost);
+}
+
+export = { formatPostText, generateOgiri, hasDuplicatePost };
