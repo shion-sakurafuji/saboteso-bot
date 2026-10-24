@@ -1,11 +1,15 @@
 import ogiri = require("./ogiri");
+import xPost = require("./x-post");
+import workflow = require("./workflow");
 
 async function main(): Promise<void> {
-	const generatedText = await ogiri.generateOgiri();
-	const postText = ogiri.formatPostText(generatedText);
+	const result = await workflow.runOgiriWorkflow(ogiri.generateOgiri, xPost.postTweet);
 
 	console.log("投稿用テキスト:");
-	console.log(postText);
+	console.log(result.postText);
+	if (result.posted) {
+		console.log("Xへの投稿が完了しました。");
+	}
 }
 
 main().catch((error: unknown) => {
