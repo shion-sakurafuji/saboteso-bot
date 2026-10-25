@@ -1,13 +1,6 @@
 name: Post saboteso ogiri
 
 on:
-  schedule:
-    - cron: "30 7 * * *"
-      timezone: "Asia/Tokyo"
-    - cron: "5 12 * * *"
-      timezone: "Asia/Tokyo"
-    - cron: "15 18 * * *"
-      timezone: "Asia/Tokyo"
 
   workflow_dispatch:
     inputs:
