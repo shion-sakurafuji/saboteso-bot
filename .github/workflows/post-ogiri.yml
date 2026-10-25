@@ -1,0 +1,63 @@
+name: Post saboteso ogiri
+
+on:
+  schedule:
+    - cron: "30 7 * * *"
+      timezone: "Asia/Tokyo"
+    - cron: "5 12 * * *"
+      timezone: "Asia/Tokyo"
+    - cron: "15 18 * * *"
+      timezone: "Asia/Tokyo"
+
+  workflow_dispatch:
+    inputs:
+      post_to_x:
+        description: "Publish to X? (false: generate text only)"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: saboteso-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.SABOTESO_AUTOPUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npx tsx --test src/*.test.ts
+
+      - name: Generate ogiri and optionally publish
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          X_POST_ENABLED: ${{ github.event_name == 'schedule' || inputs.post_to_x }}
+        run: npm run dev
