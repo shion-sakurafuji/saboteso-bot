@@ -1,0 +1,13 @@
+name: Schedule probe
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm scheduled execution
+        run: date -u
+
