@@ -3,7 +3,26 @@ import test = require("node:test");
 import ogiri = require("./ogiri");
 
 test("投稿用テキストの前後の空白を除去する", () => {
-	assert.equal(ogiri.formatPostText("  お題: テスト\n回答: テスト  \n"), "お題: テスト\n回答: テスト");
+	assert.equal(
+		ogiri.formatPostText("  お題: テスト\n回答: テスト  \n"),
+		"【お題】\nテスト\n\n【回答】\nテスト",
+	);
+});
+
+test("全角コロンとWindows形式の改行にも対応する", () => {
+	assert.equal(
+		ogiri.formatPostText("お題： 未来の校則とは？\r\n 回答： 先生の頭上だけ飛行禁止。"),
+		"【お題】\n未来の校則とは？\n\n【回答】\n先生の頭上だけ飛行禁止。",
+	);
+});
+
+test("文章の途中には余計な改行や絵文字を挿入しない", () => {
+	const question = "未来の教科書に載った、今では信じられない校則とは？";
+	const answer = "校内でのドローン飛行は、先生の頭上を除いて禁止。";
+	assert.equal(
+		ogiri.formatPostText(`お題: ${question}\n回答: ${answer}`),
+		`【お題】\n${question}\n\n【回答】\n${answer}`,
+	);
 });
 
 test("空文字はエラーにする", () => {
@@ -12,6 +31,16 @@ test("空文字はエラーにする", () => {
 
 test("空白だけの出力はエラーにする", () => {
 	assert.throws(() => ogiri.formatPostText(" \t\n "), /生成結果が空です/);
+});
+
+test("お題と回答の2行形式でない出力はエラーにする", () => {
+	assert.throws(() => ogiri.formatPostText("任意の文章"), /2行である必要があります/);
+	assert.throws(() => ogiri.formatPostText("お題: 途中で\n改行した\n回答: テスト"), /2行である必要があります/);
+});
+
+test("お題または回答が空ならエラーにする", () => {
+	assert.throws(() => ogiri.formatPostText("お題: \n回答: テスト"), /空にすることはできません/);
+	assert.throws(() => ogiri.formatPostText("お題: テスト\n回答: "), /空にすることはできません/);
 });
 
 test("過去の投稿と同じ文章は重複と判定する", () => {

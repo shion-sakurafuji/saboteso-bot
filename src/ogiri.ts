@@ -48,12 +48,23 @@ async function generateOgiri(): Promise<string> {
 }
 
 function formatPostText(generatedText: string): string {
-	const postText = generatedText.trim();
+	const postText = generatedText.trim().replace(/\r\n?/g, "\n");
 	if (!postText) {
 		throw new Error("生成結果が空です。投稿用テキストを作成できません。");
 	}
 
-	return postText;
+	const match = postText.match(/^[ \t]*お題[ \t]*[:：][ \t]*(.*)\n[ \t]*回答[ \t]*[:：][ \t]*(.*)$/);
+	if (!match) {
+		throw new Error("生成結果は「お題: ...」と「回答: ...」の2行である必要があります。");
+	}
+
+	const question = match[1]?.trim();
+	const answer = match[2]?.trim();
+	if (!question || !answer) {
+		throw new Error("お題と回答を空にすることはできません。");
+	}
+
+	return `【お題】\n${question}\n\n【回答】\n${answer}`;
 }
 
 function normalizePostText(postText: string): string {

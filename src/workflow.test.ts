@@ -31,7 +31,7 @@ test("デフォルトでは生成文を返すだけで投稿しない", async ()
 			},
 		);
 
-		assert.equal(result.postText, "お題: テスト\n回答: テスト");
+		assert.equal(result.postText, "【お題】\nテスト\n\n【回答】\nテスト");
 		assert.equal(result.posted, false);
 		assert.equal(postCalled, false);
 	});
@@ -48,7 +48,7 @@ test("X_POST_ENABLED=true の場合だけ投稿関数を呼ぶ", async () => {
 		);
 
 		assert.equal(result.posted, true);
-		assert.equal(postedText, "お題: テスト\n回答: テスト");
+		assert.equal(postedText, "【お題】\nテスト\n\n【回答】\nテスト");
 	});
 });
 
@@ -57,7 +57,7 @@ test("280文字を超える文章は投稿関数を呼ばずエラーにする",
 		let postCalled = false;
 		await assert.rejects(
 			workflow.runOgiriWorkflow(
-				async () => "あ".repeat(281),
+				async () => `お題: あ\n回答: ${"い".repeat(268)}`,
 				async () => {
 					postCalled = true;
 				},
@@ -71,10 +71,11 @@ test("280文字を超える文章は投稿関数を呼ばずエラーにする",
 test("280文字ちょうどなら投稿できる", async () => {
 	await withPostSetting("true", async () => {
 		const result = await workflow.runOgiriWorkflow(
-			async () => "あ".repeat(280),
+			async () => `お題: あ\n回答: ${"い".repeat(267)}`,
 			async () => undefined,
 		);
 
 		assert.equal(result.posted, true);
+		assert.equal(Array.from(result.postText).length, 280);
 	});
 });
