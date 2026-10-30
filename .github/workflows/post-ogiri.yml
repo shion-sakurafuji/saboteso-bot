@@ -30,6 +30,7 @@ jobs:
           persist-credentials: true
 
       - name: Load latest main and post history
+        if: ${{ inputs.post_to_x }}
         run: |
           git fetch origin main
           git checkout -B main origin/main
