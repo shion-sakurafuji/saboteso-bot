@@ -50,7 +50,7 @@ async function requestOpenAi(input: string, modelOverride?: string): Promise<str
 async function generateOgiri(): Promise<string> {
     // 1回目：お題だけを生成
     const questionRaw = await requestOpenAi(
-        "日本語の大喜利のお題を1つ作ってください。回答は出力せず、お題の本文だけを1行で出力してください。"
+        "日本語の大喜利のお題を1つ作ってください。回答は出力せず、端的にお題の本文だけを1行で出力してください。"
     );
 
     const question = questionRaw.replace(/^お題\s*[:：]\s*/, "").trim();
@@ -65,8 +65,9 @@ async function generateOgiri(): Promise<string> {
 【お題】
 ${question}
 
-このお題に対して、読んだ人が思わず笑う回答を1つ考えてください。
-ボケの設定や理由を説明せず、短い一文で回答してください。
+このお題に対して、面白い回答を1つ考えてください。
+1.不条理になりすぎて、意味が通じないものは禁止です。
+2.説明的になりすぎず、短い一文で回答してください。
 
 【出力】
 回答本文のみ、1行で出力してください。`;
