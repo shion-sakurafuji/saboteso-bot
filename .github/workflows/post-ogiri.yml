@@ -30,6 +30,7 @@ jobs:
           persist-credentials: true
 
       - name: Load latest main and post history
+        if: ${{ inputs.post_to_x }}
         run: |
           git fetch origin main
           git checkout -B main origin/main
@@ -48,12 +49,13 @@ jobs:
 
       - name: Unit tests
         run: npx tsx --test src/*.test.ts
-
+#　GitのActions実験用のために、回答を2回生成するようにしてる。（AIに送るプロンプトの効果を見るため）
       - name: Dry run (never publish to X)
         if: ${{ github.event_name == 'workflow_dispatch' && !inputs.post_to_x }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          OGIRI_COMPARE_MODEL: "gpt-6-luna"
           X_POST_ENABLED: "false"
         run: npm run dev
 

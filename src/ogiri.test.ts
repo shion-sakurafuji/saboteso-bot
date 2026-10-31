@@ -57,3 +57,66 @@ test("前後の空白や改行の違いを無視して重複と判定する", ()
 test("異なる文章は重複と判定しない", () => {
 	assert.equal(ogiri.hasDuplicatePost(["お題: 別のお題\n回答: 別の回答"], "お題: テスト\n回答: テスト"), false);
 });
+
+test("お題と回答を別々のAPI呼び出しで生成する", async (t) => {
+    const originalKey = process.env.OPENAI_API_KEY;
+    const originalModel = process.env.OPENAI_MODEL;
+
+    process.env.OPENAI_API_KEY = "test-key";
+    process.env.OPENAI_MODEL = "test-model";
+
+    t.after(() => {
+        if (originalKey === undefined) {
+            delete process.env.OPENAI_API_KEY;
+        } else {
+            process.env.OPENAI_API_KEY = originalKey;
+        }
+
+        if (originalModel === undefined) {
+            delete process.env.OPENAI_MODEL;
+        } else {
+            process.env.OPENAI_MODEL = originalModel;
+        }
+    });
+
+    const prompts: string[] = [];
+
+    const outputs = [
+        "お題: テスト用のお題は？",
+        "回答: テスト用の回答。",
+    ];
+
+    t.mock.method(globalThis, "fetch", async (_url: unknown, options?: RequestInit) => {
+        const body = JSON.parse(String(options?.body)) as {
+            input: string;
+        };
+
+        prompts.push(body.input);
+
+        const text = outputs[prompts.length - 1] ?? "";
+
+        return new Response(
+            JSON.stringify({
+                output: [{
+                    type: "message",
+                    content: [{
+                        type: "output_text",
+                        text,
+                    }],
+                }],
+            }),
+            { status: 200 },
+        );
+    });
+
+    const result = await ogiri.generateOgiri();
+
+    assert.equal(
+        result,
+        "お題: テスト用のお題は？\n回答: テスト用の回答。",
+    );
+
+    assert.equal(prompts.length, 2);
+
+    assert.match(prompts[1] ?? "", /テスト用のお題は？/);
+});
