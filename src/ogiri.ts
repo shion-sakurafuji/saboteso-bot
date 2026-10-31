@@ -11,9 +11,9 @@ type ResponsesApiResponse = {
 	};
 };
 
-async function requestOpenAi(input: string): Promise<string> {
+async function requestOpenAi(input: string, modelOverride?: string): Promise<string> {
     const apiKey = process.env.OPENAI_API_KEY;
-    const model = process.env.OPENAI_MODEL;
+    const model = modelOverride ?? process.env.OPENAI_MODEL;
 
     if (!apiKey || !model) {
         throw new Error("OPENAI_API_KEY と OPENAI_MODEL を環境変数に設定してください。");
@@ -60,8 +60,7 @@ async function generateOgiri(): Promise<string> {
     }
 
     // 2回目：確定したお題への回答だけを生成
-    const answerRaw = await requestOpenAi(
-        `あなたは日本語の大喜利の回答者です。
+    const answerPrompt = `あなたは日本語の大喜利の回答者です。
 
 目的は、お題の質問に正しく答えることではありません。
 読んだ人が思わず笑ってしまう「ボケ」を作ることです。
@@ -70,22 +69,34 @@ async function generateOgiri(): Promise<string> {
 ${question}
 
 【回答の方針】
-	1. 読者が最初に予想する普通の回答を裏切ってください。
-	2. ただし、単に意味不明なことを言うのではなく、意外なのに一瞬で意味が理解できる回答にしてください。
-	3. 具体的な人物の行動、状況、セリフなどを使い、読者の頭に面白い光景が浮かぶようにしてください。
-	4. 人間の心理、習慣、見栄、勘違いなどを利用しても構いません。
-	5. オチを説明しないでください。最後の一言がオチになるようにしてください。
-	6. ありがちな説教、単なる機能紹介、奇妙な出来事を説明するだけの回答は避けてください。
+1. 読者が最初に予想する普通の回答を裏切ってください。
+2. ただし、単に意味不明なことを言うのではなく、意外なのに一瞬で意味が理解できる回答にしてください。
+3. 具体的な人物の行動、状況、セリフなどを使い、読者の頭に面白い光景が浮かぶようにしてください。
+4. 人間の心理、習慣、見栄、勘違いなどを利用しても構いません。
+5. オチを説明しないでください。最後の一言がオチになるようにしてください。
+6. ありがちな説教、単なる機能紹介、奇妙な出来事を説明するだけの回答は避けてください。
 
-	【出力】
-	最も面白いと考える回答を1つだけ出力してください。
-	回答本文のみ、1行で出力してください。`
-    );
+【出力】
+最も面白いと考える回答を1つだけ出力してください。
+回答本文のみ、1行で出力してください。`;
 
+    // Lunaで回答を生成
+    const answerRaw = await requestOpenAi(answerPrompt);
     const answer = answerRaw.replace(/^回答\s*[:：]\s*/, "").trim();
 
     if (!answer || answer.includes("\n")) {
         throw new Error("回答の生成結果が不正です。");
+    }
+
+    // 比較モードの場合だけ、同じお題・同じ指示を別モデルにも送る
+    const compareModel = process.env.OGIRI_COMPARE_MODEL;
+
+    if (compareModel) {
+        const comparedRaw = await requestOpenAi(answerPrompt, compareModel);
+        const comparedAnswer = comparedRaw.replace(/^回答\s*[:：]\s*/, "").trim();
+
+        console.log(`\n【${process.env.OPENAI_MODEL} の回答】\n${answer}`);
+        console.log(`\n【${compareModel} の回答】\n${comparedAnswer}\n`);
     }
 
     // 既存の投稿処理が要求する形式に結合
